@@ -4,6 +4,7 @@ Gerado por `automacao/conhecimento.mjs`. Não edite à mão: cada PR integrado e
 
 | Item | Título | Data | Áreas / origem | Palavras-chave |
 | --- | --- | --- | --- | --- |
+| PR #17 | [Base de conhecimento em docs/knowledge para os agentes](prs/pr-0017-base-de-conhecimento-em-docs-knowledge-para-os-age.md) | 2026-11-11 | automação e agentes, documentação, servidor | docs, knowledge, conhecimento, github, agents |
 | PR #16 | [Resposta do atendimento só vem do agente de verdade](prs/pr-0016-resposta-do-atendimento-so-vem-do-agente-de-verdad.md) | 2026-11-11 | automação e agentes, servidor | agente, abrir, atendimento, chat, mensagem |
 | PR #15 | [Tema claro/escuro global com botão no cabeçalho](prs/pr-0015-tema-claro-escuro-global-com-botao-no-cabecalho.md) | 2026-11-11 | cliente, visual | client, tema, escuro, cabecalho, landing |
 | Issue #14 | [[app] Sugestão de poder escolher entre metodo escuro e claro](issues/issue-0014-app-sugestao-de-poder-escolher-entre-metodo-escuro.md) | 2026-11-11 | app | claro, entre, escolher, escuro, tema |
