@@ -7,6 +7,7 @@ import { Botao } from "./componentes/Botao.jsx";
 import { Campo } from "./componentes/Campo.jsx";
 import { Confirmar } from "./componentes/Confirmar.jsx";
 import { Dialogo } from "./componentes/Dialogo.jsx";
+import { AlternarTema } from "./componentes/AlternarTema.jsx";
 import { Icone } from "./componentes/Icone.jsx";
 import { moverCartaoEntreListas } from "./ordem.js";
 
@@ -269,6 +270,9 @@ export function App() {
       />
 
       <main className="canvas">
+        <header className="cabecalho-global">
+          <AlternarTema />
+        </header>
         {tela === "atendimento" ? <Atendimento /> : null}
         {tela === "quadros" && erro ? (
           <div className="aviso" role="alert">

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "./api.js";
+import { AlternarTema } from "./componentes/AlternarTema.jsx";
 import { Icone } from "./componentes/Icone.jsx";
 import { Botao } from "./componentes/Botao.jsx";
 
@@ -35,7 +36,7 @@ export function Landing() {
     <a className="inicio-pular" href="#conteudo">Pular para o conteúdo</a>
     <header className="inicio-topo inicio-largura">
       <a className="marca" href="/" aria-label="Fluxo, início"><span className="marca-simbolo"><Icone nome="colunas" tamanho={20} /></span><span className="marca-nome">Fluxo</span></a>
-      <nav aria-label="Navegação principal"><a className="inicio-nav-recurso" href="#recursos">Como funciona</a><a className="botao botao-primario" href="/quadro">Abrir meus quadros<Icone nome="chevron-direita" /></a></nav>
+      <nav aria-label="Navegação principal"><a className="inicio-nav-recurso" href="#recursos">Como funciona</a><AlternarTema /><a className="botao botao-primario" href="/quadro">Abrir meus quadros<Icone nome="chevron-direita" /></a></nav>
     </header>
     <main id="conteudo">
       <section className="inicio-hero inicio-largura" aria-labelledby="inicio-titulo">
