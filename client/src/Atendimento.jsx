@@ -255,7 +255,7 @@ export function Atendimento() {
         ) : null}
       </div>
 
-      <Dialogo aberto={novoAberto} titulo="Novo ticket" descricao="Dê um título ao assunto e descreva o que você precisa." aoFechar={() => setNovoAberto(false)}>
+      <Dialogo aberto={novoAberto} titulo="Novo Ticket" descricao="Dê um título ao assunto e descreva o que você precisa." aoFechar={() => setNovoAberto(false)}>
         {novoAberto ? (
           <form
             className="formulario"
