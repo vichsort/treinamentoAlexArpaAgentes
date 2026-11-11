@@ -4,14 +4,32 @@ import { Icone } from "./componentes/Icone.jsx";
 /** Lateral com a lista de quadros e o atalho para criar um novo. */
 export function BarraLateral({ tela, aoMudarTela, quadros, quadroId, aoSelecionar, aoNovoQuadro, aoRenomear, aoExcluir }) {
   const noQuadro = tela === "quadros";
+  const marca = (
+    <a className="marca" href="/" aria-label="Fluxo, voltar ao início" style={{ textDecoration: "none" }}>
+      <span className="marca-simbolo" aria-hidden="true">
+        <Icone nome="colunas" tamanho={18} />
+      </span>
+      <span className="marca-nome">Fluxo</span>
+    </a>
+  );
+
+  // No atendimento a lateral vira o histórico de conversas (a tela encaixa a lista em #lateral-atendimento).
+  if (tela === "atendimento") {
+    return (
+      <aside className="lateral lateral-chat" aria-label="Atendimento">
+        {marca}
+        <div id="lateral-atendimento" className="lateral-atendimento" />
+        <button type="button" className="lateral-nav-item" onClick={() => aoMudarTela("quadros")}>
+          <Icone nome="colunas" tamanho={18} />
+          Voltar aos quadros
+        </button>
+      </aside>
+    );
+  }
+
   return (
     <aside className="lateral" aria-label="Quadros">
-      <a className="marca" href="/" aria-label="Fluxo, voltar ao início" style={{ textDecoration: "none" }}>
-        <span className="marca-simbolo" aria-hidden="true">
-          <Icone nome="colunas" tamanho={18} />
-        </span>
-        <span className="marca-nome">Fluxo</span>
-      </a>
+      {marca}
 
       <nav className="lateral-nav" aria-label="Áreas do sistema">
         <button type="button" className="lateral-nav-item" data-ativo={tela === "atendimento" ? "" : undefined} aria-current={tela === "atendimento" ? "page" : undefined} onClick={() => aoMudarTela("atendimento")}>

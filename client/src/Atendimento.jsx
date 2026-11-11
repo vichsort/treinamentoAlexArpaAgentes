@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { api } from "./api.js";
 import { Botao } from "./componentes/Botao.jsx";
 import { Campo } from "./componentes/Campo.jsx";
@@ -9,6 +10,18 @@ import { Icone } from "./componentes/Icone.jsx";
 const ATUALIZAR_A_CADA_MS = 5000;
 
 const hora = (iso) => new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+
+/** Agrupa o histórico como o ChatGPT: Hoje, Ontem, Últimos 7 dias, Mais antigos. */
+function agruparPorData(tickets) {
+  const inicioDoDia = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const hoje = inicioDoDia(new Date());
+  const grupos = [["Hoje", []], ["Ontem", []], ["Últimos 7 dias", []], ["Mais antigos", []]];
+  for (const t of tickets) {
+    const dias = Math.round((hoje - inicioDoDia(new Date(t.updatedAt))) / 86_400_000);
+    grupos[dias <= 0 ? 0 : dias === 1 ? 1 : dias <= 7 ? 2 : 3][1].push(t);
+  }
+  return grupos.filter(([, lista]) => lista.length);
+}
 
 /** Caixa de texto da conversa: Enter envia, Shift+Enter quebra a linha. */
 function Composer({ aoEnviar, desabilitado, aviso, placeholder }) {
@@ -61,14 +74,12 @@ function Composer({ aoEnviar, desabilitado, aviso, placeholder }) {
 function Mensagem({ mensagem }) {
   const doUsuario = mensagem.role === "user";
   return (
-    <div className="chat-linha" data-autor={doUsuario ? "usuario" : "agente"}>
+    <div className="chat-linha" data-autor={doUsuario ? "usuario" : "agente"} title={hora(mensagem.createdAt)}>
       {doUsuario ? null : (
-        <span className="chat-avatar" aria-hidden="true"><Icone nome="chat" tamanho={16} /></span>
+        <span className="chat-avatar" role="img" aria-label="Atendimento"><Icone nome="chat" tamanho={16} /></span>
       )}
       <div className="chat-mensagem">
-        {doUsuario ? null : <span className="chat-autor">Atendimento</span>}
         <p className="chat-texto">{mensagem.content}</p>
-        <time className="chat-hora" dateTime={mensagem.createdAt}>{hora(mensagem.createdAt)}</time>
       </div>
     </div>
   );
@@ -82,7 +93,11 @@ export function Atendimento() {
   const [enviando, setEnviando] = useState(false);
   const [excluir, setExcluir] = useState(null);
   const [novoAberto, setNovoAberto] = useState(false);
+  const [slot, setSlot] = useState(null);
   const fim = useRef(null);
+
+  // O histórico mora na barra lateral do app (como no ChatGPT): a lateral expõe o ponto de encaixe.
+  useEffect(() => { setSlot(document.getElementById("lateral-atendimento")); }, []);
 
   const carregarLista = async () => {
     const dados = await api.tickets.listar();
@@ -182,41 +197,51 @@ export function Atendimento() {
 
   return (
     <section className="atendimento" aria-label="Atendimento">
-      <aside className="chat-historico" aria-label="Seus tickets">
-        <Botao className="chat-novo" icone="mais" onClick={() => setNovoAberto(true)}>Novo Ticket</Botao>
-        <h2 className="chat-historico-titulo">Seus tickets</h2>
-        {tickets === null ? (
-          <p className="lateral-vazio">Carregando tickets…</p>
-        ) : tickets.length ? (
-          <ul className="chat-historico-lista">
-            {tickets.map((t) => (
-              <li key={t.id}>
-                <div className="chat-historico-item" data-ativo={t.id === ticketId ? "" : undefined}>
-                  <button type="button" className="chat-historico-escolha" aria-current={t.id === ticketId ? "page" : undefined} onClick={() => setTicketId(t.id)}>
-                    <span className="chat-historico-nome">{t.title}</span>
-                    {t.status === "closed" ? <span className="chat-selo">Encerrado</span> : null}
-                  </button>
-                  <Botao variante="fantasma" icone="lixeira" className="chat-historico-excluir" aria-label={`Excluir ticket ${t.title}`} onClick={() => setExcluir(t)} />
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="lateral-vazio">Nenhum ticket ainda.</p>
-        )}
-      </aside>
+      {slot ? createPortal(
+        <nav className="chat-historico" aria-label="Seus tickets">
+          <button type="button" className="chat-novo" onClick={() => setNovoAberto(true)}>
+            <Icone nome="mais" tamanho={18} />
+            Novo Ticket
+          </button>
+          {tickets === null ? (
+            <p className="lateral-vazio">Carregando tickets…</p>
+          ) : tickets.length ? (
+            agruparPorData(tickets).map(([rotulo, lista]) => (
+              <div key={rotulo} className="chat-grupo">
+                <h2 className="chat-historico-titulo">{rotulo}</h2>
+                <ul className="chat-historico-lista">
+                  {lista.map((t) => (
+                    <li key={t.id}>
+                      <div className="chat-historico-item" data-ativo={t.id === ticketId ? "" : undefined}>
+                        <button type="button" className="chat-historico-escolha" aria-current={t.id === ticketId ? "page" : undefined} onClick={() => setTicketId(t.id)}>
+                          <span className="chat-historico-nome">{t.title}</span>
+                          {t.status === "closed" ? <span className="chat-selo">Encerrado</span> : null}
+                        </button>
+                        <Botao variante="fantasma" icone="lixeira" className="chat-historico-excluir" aria-label={`Excluir ticket ${t.title}`} onClick={() => setExcluir(t)} />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          ) : (
+            <p className="lateral-vazio">Nenhum ticket ainda.</p>
+          )}
+        </nav>,
+        slot,
+      ) : null}
 
       <div className="chat-principal">
-        {ticket ? (
-          <header className="chat-topo">
-            <h1 className="chat-titulo">{ticket.title}</h1>
-            {encerrado ? (
-              <Botao icone="atualizar" onClick={() => void mudarStatus("open")}>Reabrir</Botao>
+        <header className="chat-topo">
+          <h1 className="chat-titulo">{ticket ? ticket.title : "Atendimento"}</h1>
+          {ticket ? (
+            encerrado ? (
+              <Botao variante="fantasma" icone="atualizar" onClick={() => void mudarStatus("open")}>Reabrir</Botao>
             ) : (
-              <Botao onClick={() => void mudarStatus("closed")}>Encerrar ticket</Botao>
-            )}
-          </header>
-        ) : null}
+              <Botao variante="fantasma" onClick={() => void mudarStatus("closed")}>Encerrar ticket</Botao>
+            )
+          ) : null}
+        </header>
 
         {erro ? (
           <div className="aviso chat-aviso" role="alert">
@@ -230,17 +255,24 @@ export function Atendimento() {
           <div className="chat-mensagens">
             <div className="chat-faixa">
               {mensagens.map((m) => <Mensagem key={m.id} mensagem={m} />)}
-              {aguardando ? <p className="chat-espera" role="status">Aguardando resposta do atendimento…</p> : null}
+              {aguardando ? (
+                <div className="chat-linha" data-autor="agente" role="status" aria-label="Aguardando resposta do atendimento">
+                  <span className="chat-avatar" aria-hidden="true"><Icone nome="chat" tamanho={16} /></span>
+                  <div className="chat-mensagem"><span className="chat-digitando" aria-hidden="true"><i /><i /><i /></span></div>
+                </div>
+              ) : null}
               {encerrado ? <p className="chat-espera">Ticket encerrado. Reabra para continuar a conversa.</p> : null}
               <div ref={fim} />
             </div>
           </div>
         ) : (
           <div className="chat-boas-vindas">
-            <span className="chat-boas-vindas-simbolo" aria-hidden="true"><Icone nome="chat" tamanho={26} /></span>
             <h1>Como podemos ajudar?</h1>
-            <p>Abra um ticket com um título e a descrição do assunto. A conversa fica salva aqui.</p>
-            <Botao variante="primario" icone="mais" onClick={() => setNovoAberto(true)}>Abrir Ticket</Botao>
+            {/* Visual de caixa de mensagem; abre o formulário de título e descrição. */}
+            <div className="chat-composer-caixa chat-composer-falso" onClick={() => setNovoAberto(true)}>
+              <span className="chat-composer-campo">Descreva o seu problema ou dúvida…</span>
+              <Botao variante="primario" icone="mais" onClick={(e) => { e.stopPropagation(); setNovoAberto(true); }}>Abrir Ticket</Botao>
+            </div>
           </div>
         )}
 
