@@ -4,6 +4,7 @@ Gerado por `automacao/conhecimento.mjs`. Não edite à mão: cada PR integrado e
 
 | Item | Título | Data | Áreas / origem | Palavras-chave |
 | --- | --- | --- | --- | --- |
+| PR #20 | [Filtro por período no histórico de tickets](prs/pr-0020-filtro-por-periodo-no-historico-de-tickets.md) | 2026-11-11 | cliente, visual | client, periodos, dias, tickets, historico |
 | PR #17 | [Base de conhecimento em docs/knowledge para os agentes](prs/pr-0017-base-de-conhecimento-em-docs-knowledge-para-os-age.md) | 2026-11-11 | automação e agentes, documentação, servidor | docs, knowledge, conhecimento, github, agents |
 | PR #16 | [Resposta do atendimento só vem do agente de verdade](prs/pr-0016-resposta-do-atendimento-so-vem-do-agente-de-verdad.md) | 2026-11-11 | automação e agentes, servidor | agente, abrir, atendimento, chat, mensagem |
 | PR #15 | [Tema claro/escuro global com botão no cabeçalho](prs/pr-0015-tema-claro-escuro-global-com-botao-no-cabecalho.md) | 2026-11-11 | cliente, visual | client, tema, escuro, cabecalho, landing |
