@@ -183,7 +183,7 @@ export function Atendimento() {
   return (
     <section className="atendimento" aria-label="Atendimento">
       <aside className="chat-historico" aria-label="Seus tickets">
-        <Botao className="chat-novo" icone="mais" onClick={() => setNovoAberto(true)}>Novo ticket</Botao>
+        <Botao className="chat-novo" icone="mais" onClick={() => setNovoAberto(true)}>Novo Ticket</Botao>
         <h2 className="chat-historico-titulo">Seus tickets</h2>
         {tickets === null ? (
           <p className="lateral-vazio">Carregando tickets…</p>
