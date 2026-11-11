@@ -1,7 +1,7 @@
 // Regras puras do atendimento por Actions: origem, entrada do coordenador e validação do resultado.
 // Tudo que vem do modelo é dado não confiável: só passa o que estas funções aceitam, fora do modelo.
 import { timingSafeEqual } from "node:crypto";
-import { assinar, resultPathDe } from "../server/src/github.js";
+import { assinar, normalizarPedido, resultPathDe } from "../server/src/github.js";
 
 export const DESFECHOS = ["working", "code", "answered", "waiting-customer", "commercial", "human-review"];
 export const AGENTES = ["coordenador", "n1", "comercial", "po", "desenvolvedor", "revisor"];
@@ -26,14 +26,14 @@ export const caminhoPermitido = (p) => typeof p === "string" && !p.includes(".."
 export function lerPedido(issue) {
   const m = MARCADOR.exec(issue.body ?? "");
   if (!m) return null;
-  const pedido = (issue.body.split("### Pedido do cliente")[1] ?? "").trim().split("\n").map((l) => l.replace(/^> ?/, "")).join("\n").slice(0, 3000);
+  const pedido = (issue.body.split("### Pedido do cliente")[1] ?? "").trim().split("\n").map((l) => l.replace(/^> ?/, "")).join("\n");
   return { requestId: m[1], ticketId: m[2], resultPath: m[3], sig: m[4], pedido };
 }
 
 /** A origem só vale se a assinatura bater com o segredo do backend e o resultPath for o esperado. */
 export function origemValida(marcador, segredo) {
   if (!marcador || !segredo) return false;
-  const esperada = Buffer.from(assinar(segredo, marcador.requestId, marcador.ticketId), "hex");
+  const esperada = Buffer.from(assinar(segredo, marcador.requestId, marcador.ticketId, marcador.pedido), "hex");
   const recebida = Buffer.from(marcador.sig, "hex");
   return marcador.requestId === `app-${marcador.ticketId}`
     && marcador.resultPath === resultPathDe(marcador.requestId)
@@ -44,7 +44,7 @@ export function origemValida(marcador, segredo) {
 export function montarEntrada({ repo, issue, marcador }) {
   return {
     requestId: marcador.requestId, resultPath: marcador.resultPath, repo, issue: issue.number,
-    titulo: String(issue.title ?? "").slice(0, 200), pedido: marcador.pedido,
+    titulo: String(issue.title ?? "").slice(0, 200), pedido: normalizarPedido(marcador.pedido).slice(0, 3000),
   };
 }
 

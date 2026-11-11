@@ -22,8 +22,10 @@ export function configGithub(env = process.env) {
 export const requestIdDe = (ticketId) => `app-${ticketId}`;
 export const resultPathDe = (requestId) => `docs/automacao-atendimento/resultados/${requestId}.md`;
 /** Assinatura que prova que a issue nasceu no backend: a label origin:app sozinha qualquer um aplica. */
-export const assinar = (segredo, requestId, ticketId) =>
-  createHmac("sha256", segredo).update(`${requestId}:${ticketId}`).digest("hex");
+export const normalizarPedido = (t) => String(t).replace(/\r/g, "").trim();
+/** A assinatura cobre também o pedido: copiar o marcador para outra issue com outro texto não passa. */
+export const assinar = (segredo, requestId, ticketId, pedido) =>
+  createHmac("sha256", segredo).update(`${requestId}:${ticketId}:${normalizarPedido(pedido)}`).digest("hex");
 
 /** Resumo interno da issue. O marcador na primeira linha é o vínculo que o workflow valida. */
 export function montarIssue({ ticket, descricao, segredo }) {
@@ -33,7 +35,7 @@ export function montarIssue({ ticket, descricao, segredo }) {
     title: `[app] ${ticket.title}`,
     labels: ["origin:app"],
     body: [
-      `<!-- fluxo-request id=${requestId} ticket=${ticket.id} resultPath=${resultPathDe(requestId)} sig=${assinar(segredo, requestId, ticket.id)} -->`,
+      `<!-- fluxo-request id=${requestId} ticket=${ticket.id} resultPath=${resultPathDe(requestId)} sig=${assinar(segredo, requestId, ticket.id, descricao)} -->`,
       `**Origem:** app (ticket \`${ticket.id}\`)`,
       `**Dono:** ${ticket.dono_id ?? "anônimo"}`,
       "",

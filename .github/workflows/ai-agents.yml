@@ -105,7 +105,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           RESULTADO: ${{ runner.temp }}/resultado/resultado-validado.json
-      - run: |
+      - if: steps.aplicar.outputs.skip == 'false'
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -c "$RAMO"
@@ -114,7 +115,8 @@ jobs:
           git push origin "$RAMO"
         env:
           RAMO: ${{ steps.aplicar.outputs.ramo }}
-      - run: node automacao/controlador.mjs abrir-pr
+      - if: steps.aplicar.outputs.skip == 'false'
+        run: node automacao/controlador.mjs abrir-pr
         env:
           GITHUB_TOKEN: ${{ github.token }}
           RAMO: ${{ steps.aplicar.outputs.ramo }}

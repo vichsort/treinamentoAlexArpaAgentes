@@ -9,7 +9,7 @@ import { abrirIssue, configGithub, dispararWorkflow, lerEstado, montarIssue, req
 const STATUS = ["open", "closed"];
 const saidaMensagem = (m) => ({ id: m.id, ticketId: m.ticket_id, role: m.role, content: m.content, createdAt: m.criado_em });
 const saidaTicket = (t) => ({ id: t.id, title: t.title, status: t.status, createdAt: t.criado_em, updatedAt: t.atualizado_em });
-const FASES_FINAIS = new Set(["concluido", "incerto", "erro"]);
+const FASES_FINAIS = new Set(["concluido"]);
 const MAX_PUBLICO = 600;
 
 const gravarMensagem = (db, ticketId, role, content, agora) => {
