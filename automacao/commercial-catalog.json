@@ -1,0 +1,9 @@
+{
+  "produto": "Fluxo",
+  "descricao": "Quadro de tarefas com quadros, listas e cartões, mais uma área de atendimento por tickets.",
+  "recursos": ["quadros", "listas", "cartoes", "mover cartoes por arraste ou menu", "atendimento por tickets"],
+  "precos": null,
+  "planos": null,
+  "prazos": null,
+  "observacao": "Preço, plano e prazo não são conhecidos. Responder que a informação não está disponível e perguntar o que o cliente precisa."
+}
