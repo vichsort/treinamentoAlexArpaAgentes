@@ -10,28 +10,39 @@ on:
         description: Número da issue origin:app
         required: true
       retomar:
-        description: Retomar uma execução que ficou incerta
+        description: Retomar uma execução incerta ou uma entrega que parou no meio
+        type: boolean
+        default: false
+      corrigir:
+        description: Rodada única de correção no mesmo PR (o controlador dispara sozinho)
         type: boolean
         default: false
   issues:
     types: [opened]
+  # Merge manual do PR gerado: entrega a resposta e fecha a issue. Roda a main confiável, sem checkout do PR.
+  pull_request_target:
+    types: [closed]
 
 permissions:
   contents: read
 
 # Uma execução por issue; as seguintes esperam e releem o estado.
 concurrency:
-  group: ai-agents-${{ inputs.issue || github.event.issue.number }}
+  group: ai-agents-${{ inputs.issue || github.event.issue.number || github.event.pull_request.number }}
   cancel-in-progress: false
 
 env:
   ISSUE: ${{ inputs.issue || github.event.issue.number }}
   RETOMAR: ${{ inputs.retomar || 'false' }}
+  CORRIGIR: ${{ inputs.corrigir || 'false' }}
+  PR_NUMBER: ${{ github.event.pull_request.number }}
+  AUTO_MERGE: ${{ vars.AUTO_MERGE || 'false' }}
   AGENT_RUNTIME: ${{ vars.AGENT_RUNTIME }}
   AGENT_DRY_RUN: ${{ vars.AGENT_DRY_RUN || 'true' }}
 
 jobs:
   coordenar:
+    if: github.event_name != 'pull_request_target'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -105,7 +116,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           RESULTADO: ${{ runner.temp }}/resultado/resultado-validado.json
-      - if: steps.aplicar.outputs.skip == 'false'
+      - if: steps.aplicar.outputs.skip == 'false' && steps.aplicar.outputs.corrigido != 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -115,7 +126,7 @@ jobs:
           git push origin "$RAMO"
         env:
           RAMO: ${{ steps.aplicar.outputs.ramo }}
-      - if: steps.aplicar.outputs.skip == 'false'
+      - if: steps.aplicar.outputs.skip == 'false' && steps.aplicar.outputs.corrigido != 'true'
         run: node automacao/controlador.mjs abrir-pr
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -150,9 +161,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
-      contents: read
+      contents: write # só usado no merge, e só com AUTO_MERGE=true
       issues: write
       pull-requests: write
+      actions: write # dispara a rodada única de correção
     steps:
       - uses: actions/checkout@v4
         with:
@@ -163,3 +175,27 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           RESULTADO_BUILD: ${{ needs.construir.result }}
           SHA_BUILD: ${{ needs.construir.outputs.sha }}
+      # Build verde: AUTO_MERGE=false deixa o PR para a demonstração; true integra respeitando as regras da branch.
+      - run: node automacao/controlador.mjs entregar
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+  # Entrega depois de merge manual (evento do PR) ou retomada explícita depois de uma falha no meio da entrega.
+  entrega:
+    if: >-
+      (github.event_name == 'pull_request_target' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'ai/'))
+      || (github.event_name == 'workflow_dispatch' && inputs.retomar)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - run: node automacao/controlador.mjs entregar
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

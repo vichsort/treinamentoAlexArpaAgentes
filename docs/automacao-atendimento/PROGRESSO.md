@@ -25,3 +25,11 @@
 - **Agentes:** Desenvolvedor confere o comportamento uma vez no app (e avisa se não conseguiu abrir); Revisor registra em uma frase se o diff atende.
 - **Executado localmente:** `npm ci`, `npm run build` e `npm test` (22 testes) com sucesso.
 - **Conferência no app:** esta etapa não muda a interface, então não há conferência visual.
+
+## Etapa 05: entregar a resposta e tratar retomadas
+
+- **Entrega:** build verde do commit atual → `AUTO_MERGE=false` (padrão) deixa o PR para a demonstração; `true` integra por squash com o `sha` travado e respeita as regras da branch (se bloquearem, não há bypass: o PR fica aguardando). Merge confirmado na main → mensagem do N1 com ID estável `entrega` (o app local precisa ser atualizado), issue fechada e fase `concluido`. O PR usa `ref. #n`, nunca `closes`.
+- **Sem código:** dúvida de uso respondida (`answered`/`commercial`) fecha a issue; `waiting-customer` e `human-review` mantêm o caso aberto.
+- **Falha:** build falho dispara uma única rodada de correção no MESMO PR (erro curto + requestId, commit pela API na mesma branch); se falhar de novo, fase `pendente-instrutor` e ninguém repete nada sozinho.
+- **Retomada:** o estado de cada issue fica num comentário do bot (fase, PR, rodadas e IDs de mensagens). Se algo parar no meio, rode o workflow `ai-agents` com `retomar=true` na issue: `preparar` só retoma fases `iniciado`, `incerto` ou `erro`; o job `entrega` repete só a resposta e o fechamento (fases `merged` ou `aguardando-merge`), sem duplicar a mensagem nem refazer o código. Um merge manual do PR também dispara a entrega.
+- **Verificado localmente** com GitHub simulado: merge manual, auto-merge, branch protegida, falha ao fechar a issue e retomada, e a mensagem chegando ao ticket uma única vez. Os jobs do workflow só rodam de verdade no GitHub.
