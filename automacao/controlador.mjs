@@ -74,7 +74,7 @@ if (fase === "preparar") {
     console.log(`Issue #${numero} em fase "${e.fase}": nada a repetir (só iniciado, incerto ou erro retomam, com retomar=true).`);
     saida("skip", "true"); process.exit(0);
   }
-  await gravarEstado(atual, { requestId: marcador.requestId, resultPath: marcador.resultPath, fase: "iniciado", run: env.GITHUB_RUN_ID, pr: null, publicUpdates: [{ id: "inicio", publicText: "Seu pedido chegou à equipe e já estamos analisando." }], at: new Date().toISOString() });
+  await gravarEstado(atual, { requestId: marcador.requestId, resultPath: marcador.resultPath, fase: "iniciado", run: env.GITHUB_RUN_ID, pr: null, publicUpdates: [], at: new Date().toISOString() });
   writeFileSync(join(temp, "entrada.json"), JSON.stringify(entrada));
   saida("skip", "false");
   console.log(`Issue #${numero} preparada (${marcador.requestId}).`);
