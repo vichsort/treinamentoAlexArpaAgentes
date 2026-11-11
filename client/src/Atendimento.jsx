@@ -7,7 +7,14 @@ import { Confirmar } from "./componentes/Confirmar.jsx";
 import { Dialogo } from "./componentes/Dialogo.jsx";
 import { Icone } from "./componentes/Icone.jsx";
 
-const ATUALIZAR_A_CADA_MS = 5000;
+// Com a tela aberta, busca a conversa de tempos em tempos; o backend por sua vez consulta a issue no GitHub.
+const ATUALIZAR_A_CADA_MS = 4000;
+
+const ETAPAS = {
+  recebido: "Recebido", "issue-aberta": "Na fila", iniciado: "Em análise", "pr-pendente": "Preparando a alteração", "pr-aberto": "Conferindo a alteração",
+  "pr-verde": "Alteração conferida", "aguardando-merge": "Aguardando aprovação", merged: "Integrando", concluido: "Concluído",
+  "build-falhou": "Corrigindo", corrigindo: "Corrigindo", "pendente-instrutor": "Com a equipe", erro: "Atenção da equipe", incerto: "Atenção da equipe", ensaio: "Em análise",
+};
 
 const hora = (iso) => new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
@@ -94,6 +101,7 @@ export function Atendimento() {
   const [excluir, setExcluir] = useState(null);
   const [novoAberto, setNovoAberto] = useState(false);
   const [slot, setSlot] = useState(null);
+  const [sincronizando, setSincronizando] = useState(false);
   const fim = useRef(null);
 
   // O histórico mora na barra lateral do app (como no ChatGPT): a lateral expõe o ponto de encaixe.
@@ -112,6 +120,8 @@ export function Atendimento() {
   useEffect(() => {
     let vivo = true;
     const atualizar = async () => {
+      if (document.hidden && primeira === false) return; // aba em segundo plano: espera voltar
+      primeira = false;
       try {
         const lista = await api.tickets.listar();
         if (!vivo) return;
@@ -129,6 +139,7 @@ export function Atendimento() {
         setTickets((atual) => atual ?? []);
       }
     };
+    let primeira = true;
     setConversa((atual) => (atual?.ticket.id === ticketId ? atual : null));
     void atualizar();
     const relogio = setInterval(atualizar, ATUALIZAR_A_CADA_MS);
@@ -171,6 +182,19 @@ export function Atendimento() {
         await carregarLista();
       } finally {
         setEnviando(false);
+      }
+    });
+
+  /** Botão Atualizar: força o backend a reler a issue agora, sem esperar o próximo ciclo. */
+  const sincronizar = () =>
+    executar(async () => {
+      setSincronizando(true);
+      try {
+        const [lista, dados] = await Promise.all([api.tickets.listar(), api.tickets.detalhe(ticketId, true)]);
+        setTickets(lista?.tickets ?? []);
+        setConversa(dados);
+      } finally {
+        setSincronizando(false);
       }
     });
 
@@ -234,6 +258,12 @@ export function Atendimento() {
       <div className="chat-principal">
         <header className="chat-topo">
           <h1 className="chat-titulo">{ticket ? ticket.title : "Atendimento"}</h1>
+          {ticket?.issueNumber ? (
+            <span className="chat-etapa" role="status">Issue #{ticket.issueNumber} · {ETAPAS[ticket.phase] ?? "Em andamento"}</span>
+          ) : null}
+          {ticket ? (
+            <Botao variante="fantasma" icone="atualizar" className={sincronizando ? "chat-atualizando" : ""} aria-label="Atualizar conversa" title="Buscar novas mensagens na issue agora" disabled={sincronizando} onClick={() => void sincronizar()} />
+          ) : null}
           {ticket ? (
             encerrado ? (
               <Botao variante="fantasma" icone="atualizar" onClick={() => void mudarStatus("open")}>Reabrir</Botao>

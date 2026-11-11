@@ -8,7 +8,7 @@ import { abrirIssue, configGithub, dispararWorkflow, lerEstado, montarIssue, req
 
 const STATUS = ["open", "closed"];
 const saidaMensagem = (m) => ({ id: m.id, ticketId: m.ticket_id, role: m.role, content: m.content, createdAt: m.criado_em });
-const saidaTicket = (t) => ({ id: t.id, title: t.title, status: t.status, createdAt: t.criado_em, updatedAt: t.atualizado_em });
+const saidaTicket = (t) => ({ id: t.id, title: t.title, status: t.status, createdAt: t.criado_em, updatedAt: t.atualizado_em, phase: t.fase ?? null, issueNumber: t.issue_number ?? null });
 const FASES_FINAIS = new Set(["concluido"]);
 const MAX_PUBLICO = 600;
 
@@ -67,11 +67,11 @@ export function rotasDeTickets(app, db) {
     }
   };
 
-  /** Consulta simples ao GitHub (no máximo a cada 15 s por ticket) até o workflow chegar a uma fase final. */
-  const reconciliar = async (ticket) => {
+  /** Consulta simples ao GitHub (a cada 3 s por ticket; o botão Atualizar força, no mínimo 1 s) até o workflow chegar a uma fase final. */
+  const reconciliar = async (ticket, forcar = false) => {
     const gh = configGithub();
     if (!gh.ativo || gh.ensaio || !ticket.issue_number || FASES_FINAIS.has(ticket.fase)) return;
-    if (Date.now() - (ultimaConsulta.get(ticket.id) ?? 0) < 15_000) return;
+    if (Date.now() - (ultimaConsulta.get(ticket.id) ?? 0) < (forcar ? 1_000 : 3_000)) return;
     ultimaConsulta.set(ticket.id, Date.now());
     try { importarEstado(db, ticket, await lerEstado(gh, ticket.issue_number)); }
     catch (e) { console.error("Reconciliação falhou:", e.message); }
@@ -104,8 +104,8 @@ export function rotasDeTickets(app, db) {
     return { ticket: saidaTicket(ticket), messages: mensagens.map(saidaMensagem) };
   });
 
-  app.get("/api/tickets/:id", async ({ params, req }) => {
-    await reconciliar(buscar(params.id, req));
+  app.get("/api/tickets/:id", async ({ params, req, url }) => {
+    await reconciliar(buscar(params.id, req), url.searchParams.get("sincronizar") === "1");
     const ticket = buscar(params.id, req);
     const messages = db.prepare("SELECT * FROM ticket_mensagem WHERE ticket_id = ? ORDER BY criado_em, rowid").all(ticket.id).map(saidaMensagem);
     return { ticket: saidaTicket(ticket), messages };

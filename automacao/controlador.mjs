@@ -36,6 +36,8 @@ async function gravarEstado(atual, novo) {
   atual.estado = novo;
 }
 
+/** Marco real do trabalho: vira mensagem do N1 no app, uma vez só (ID estável). */
+const anunciar = (estado, id, texto) => ({ ...estado, publicUpdates: [...(estado.publicUpdates ?? []).filter((u) => u.id !== id), { id, publicText: texto }] });
 const comentar = (alvo, body) => gh("POST", `/issues/${alvo}/comments`, { body });
 const fase = process.argv[2];
 
@@ -59,7 +61,7 @@ if (fase === "preparar") {
       if (!caminhoPermitido(p)) continue;
       fontes[p] = Buffer.from((await gh("GET", `/contents/${p}?ref=ai/${e.requestId}`)).content, "base64").toString("utf8");
     }
-    await gravarEstado(atual, { ...e, fase: "corrigindo", rodadas: (e.rodadas ?? 0) + 1, run: env.GITHUB_RUN_ID, at: new Date().toISOString() });
+    await gravarEstado(atual, anunciar({ ...e, fase: "corrigindo", rodadas: (e.rodadas ?? 0) + 1, run: env.GITHUB_RUN_ID, at: new Date().toISOString() }, "correcao", "A conferência encontrou um problema e estamos fazendo um ajuste."));
     writeFileSync(join(temp, "entrada.json"), JSON.stringify({ ...entrada, correcao: { erro: String(e.erroBuild ?? "build falhou").slice(0, 300), allowedFiles: e.allowedFiles ?? [] }, fontes }));
     saida("skip", "false");
     console.log(`Correção #${(e.rodadas ?? 0) + 1} preparada para ${e.requestId}.`);
@@ -72,7 +74,7 @@ if (fase === "preparar") {
     console.log(`Issue #${numero} em fase "${e.fase}": nada a repetir (só iniciado, incerto ou erro retomam, com retomar=true).`);
     saida("skip", "true"); process.exit(0);
   }
-  await gravarEstado(atual, { requestId: marcador.requestId, resultPath: marcador.resultPath, fase: "iniciado", run: env.GITHUB_RUN_ID, pr: null, publicUpdates: [], at: new Date().toISOString() });
+  await gravarEstado(atual, { requestId: marcador.requestId, resultPath: marcador.resultPath, fase: "iniciado", run: env.GITHUB_RUN_ID, pr: null, publicUpdates: [{ id: "inicio", publicText: "Seu pedido chegou à equipe e já estamos analisando." }], at: new Date().toISOString() });
   writeFileSync(join(temp, "entrada.json"), JSON.stringify(entrada));
   saida("skip", "false");
   console.log(`Issue #${numero} preparada (${marcador.requestId}).`);
@@ -104,7 +106,7 @@ if (fase === "publicar") {
     fase: r.outcome === "working" ? "iniciado" : r.outcome === "code" ? "pr-pendente" : "concluido",
     outcome: r.outcome, publicText: correcao ? anterior.publicText : r.publicText,
     allowedFiles: r.allowedFiles,
-    publicUpdates: [...(correcao ? anterior.publicUpdates ?? [] : []), ...r.updates.map((u) => ({ id: `${prefixo}${u.id}`.slice(0, 40), publicText: u.publicText }))],
+    publicUpdates: [...(anterior.publicUpdates ?? []), ...r.updates.map((u) => ({ id: `${prefixo}${u.id}`.slice(0, 40), publicText: u.publicText }))],
   });
   writeFileSync(join(temp, "resultado-validado.json"), JSON.stringify(r));
   saida("outcome", r.outcome);
@@ -161,7 +163,7 @@ if (fase === "abrir-pr") {
     title: String(issue.title).slice(0, 120), head: env.RAMO, base: "main",
     body: `Pedido ${atual.estado.requestId} (ref. #${numero}). Gerado pelo atendimento automático. Revise antes de aceitar.`,
   });
-  await gravarEstado(atual, { ...atual.estado, fase: "pr-aberto", pr: pr.number });
+  await gravarEstado(atual, anunciar({ ...atual.estado, fase: "pr-aberto", pr: pr.number }, "pr-aberto", "Preparamos uma proposta de alteração e estamos conferindo se tudo funciona."));
   console.log(`PR #${pr.number} aberto.`);
 }
 
@@ -180,17 +182,17 @@ if (fase === "build") {
   console.log(veredito);
   if (!origemOk || !atual) process.exit(0);
   if (passou) {
-    await gravarEstado(atualEstado, { ...estado, fase: "pr-verde" });
+    await gravarEstado(atualEstado, anunciar({ ...estado, fase: "pr-verde" }, "build-ok", "A conferência automática da alteração passou."));
   } else if ((estado.rodadas ?? 0) < RODADAS_MAX) {
     // Erro curto: só o passo que falhou, sem log.
     const jobs = await gh("GET", `/actions/runs/${env.GITHUB_RUN_ID}/jobs`).catch(() => ({ jobs: [] }));
     const passo = jobs.jobs.find((j) => j.name === "construir")?.steps?.find((s) => s.conclusion === "failure")?.name ?? "build";
-    await gravarEstado(atualEstado, { ...estado, fase: "build-falhou", erroBuild: `falha no passo "${passo}"` });
+    await gravarEstado(atualEstado, anunciar({ ...estado, fase: "build-falhou", erroBuild: `falha no passo "${passo}"` }, "build-falhou", "A conferência encontrou um erro. Vamos tentar corrigir automaticamente."));
     // dispatch com GITHUB_TOKEN é a exceção que inicia outro workflow
     await gh("POST", "/actions/workflows/ai-agents.yml/dispatches", { ref: "main", inputs: { issue: String(numero), corrigir: "true" } });
     console.log("Correção automática solicitada (rodada 1).");
   } else {
-    await gravarEstado(atualEstado, { ...estado, fase: "pendente-instrutor" });
+    await gravarEstado(atualEstado, anunciar({ ...estado, fase: "pendente-instrutor" }, "pendente", "Não conseguimos concluir sozinhos. A equipe vai analisar o seu pedido."));
     await comentar(numero, `O build continua falhando depois da rodada de correção (requestId ${estado.requestId}). Pendência para o instrutor decidir; nada será repetido sozinho.`);
   }
 }
@@ -207,7 +209,7 @@ if (fase === "entregar") {
     if (estado.fase !== "pr-verde" && estado.fase !== "aguardando-merge") { console.log(`Fase "${estado.fase}": aguardando build verde.`); process.exit(0); }
     if (env.AUTO_MERGE !== "true") {
       if (estado.fase !== "aguardando-merge") {
-        await gravarEstado(atualEstado, { ...estado, fase: "aguardando-merge" });
+        await gravarEstado(atualEstado, anunciar({ ...estado, fase: "aguardando-merge" }, "aguardando", "A alteração está pronta e aguarda a aprovação da equipe."));
         await comentar(estado.pr, "Build verde e revisão registrada. AUTO_MERGE=false: PR disponível para demonstração; o merge é manual.");
       }
       console.log("PR aguardando merge manual."); process.exit(0);

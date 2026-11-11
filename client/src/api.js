@@ -39,7 +39,7 @@ export const api = {
   tickets: {
     listar: () => pedir("GET", "/tickets"),
     abrir: (title, message) => pedir("POST", "/tickets", { title, message }),
-    detalhe: (id) => pedir("GET", `/tickets/${id}`),
+    detalhe: (id, sincronizar = false) => pedir("GET", `/tickets/${id}${sincronizar ? "?sincronizar=1" : ""}`),
     mudarStatus: (id, status) => pedir("PATCH", `/tickets/${id}`, { status }),
     excluir: (id) => pedir("DELETE", `/tickets/${id}`),
     enviar: (id, content) => pedir("POST", `/tickets/${id}/messages`, { content }),
