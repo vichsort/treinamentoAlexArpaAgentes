@@ -240,7 +240,7 @@ export function Atendimento() {
             <span className="chat-boas-vindas-simbolo" aria-hidden="true"><Icone nome="chat" tamanho={26} /></span>
             <h1>Como podemos ajudar?</h1>
             <p>Abra um ticket com um título e a descrição do assunto. A conversa fica salva aqui.</p>
-            <Botao variante="primario" icone="mais" onClick={() => setNovoAberto(true)}>Abrir ticket</Botao>
+            <Botao variante="primario" icone="mais" onClick={() => setNovoAberto(true)}>Abrir Ticket</Botao>
           </div>
         )}
 
