@@ -13,5 +13,6 @@ Gerado por `automacao/conhecimento.mjs`. Não edite à mão: cada PR integrado e
 | PR #11 | [Etapa 05: entrega da resposta, merge opcional e retomadas](prs/pr-0011-etapa-05-entrega-da-resposta-merge-opcional-e-reto.md) | 2026-11-11 | automação e agentes, documentação | merge, automacao, entrega, build, github |
 | PR #10 | [Etapa 04: CI mínimo e conferência do build do PR gerado](prs/pr-0010-etapa-04-ci-minimo-e-conferencia-do-build-do-pr-ge.md) | 2026-11-11 | automação e agentes, documentação | build, github, agents, workflows, agent |
 | PR #9 | [Troca o rótulo do botão para "+ Abrir Ticket"](prs/pr-0009-troca-o-rotulo-do-botao-para-abrir-ticket.md) | 2026-11-11 | cliente | abrir, atendimento, botao, client, aberto |
+| Issue #8 | [[app] Trocar label do botão Abrir ticket](issues/issue-0008-app-trocar-label-do-botao-abrir-ticket.md) | 2026-11-11 | app | abrir, botao, label, trocar |
 | PR #7 | [Troca o rótulo do botão para "Novo Ticket"](prs/pr-0007-troca-o-rotulo-do-botao-para-novo-ticket.md) | 2026-11-11 | cliente | novo, atendimento, botao, client, altera |
 | Issue #4 | [[app] Falta de caf](issues/issue-0004-app-falta-de-caf.md) | 2026-11-11 | app | acabou, cozinha, falta |
