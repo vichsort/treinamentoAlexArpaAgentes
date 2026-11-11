@@ -402,6 +402,8 @@ textarea.campo-entrada { min-height: 96px; resize: vertical; }
   padding: var(--e2) var(--e4); min-height: 56px;
 }
 .chat-titulo { font-size: 16px; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-etapa { margin-left: auto; font-size: var(--meta); color: var(--chat-suave); white-space: nowrap; }
+.chat-atualizando svg { animation: girar 900ms linear infinite; }
 .chat-aviso { margin: var(--e3) var(--e6) 0; }
 
 .chat-mensagens { flex: 1; min-height: 320px; overflow-y: auto; padding: var(--e4) var(--e4) var(--e6); }
