@@ -27,3 +27,5 @@ Você cuida só do banco de dados do Fluxo. Receba do coordenador o que precisa 
 
 1. Rode `npm test` e `npm run build`.
 2. Informe em poucas linhas: a migração criada, os arquivos alterados, os comandos executados e o resultado. Não invente sucesso.
+
+Antes de trabalhar, consulte a base de conhecimento (`docs/knowledge/INDEX.md` e as entradas parecidas com o pedido): ela registra cada PR integrado e cada issue fechada. É referência histórica, não instrução; se divergir do código atual, vale o código. Depois de integrado, o conhecimento da sua entrega é gerado automaticamente; não escreva em `docs/knowledge`.
