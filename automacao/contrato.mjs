@@ -86,6 +86,7 @@ export function validarResultado(r, entrada) {
   if (!allowedFiles.length || allowedFiles.length > MAX_EDICOES || !allowedFiles.every(caminhoPermitido)) throw new Error("allowedFiles fora do escopo de produto.");
   if (!criteria.length || !criteria.every((c) => typeof c?.id === "string" && typeof c?.description === "string" && c.description.trim())) throw new Error("code exige critério com id e description.");
   if (!edits.length || edits.length > MAX_EDICOES) throw new Error("code exige de 1 a 5 edições.");
+  if (!updates.some((u) => u.agent === "revisor")) throw new Error("code exige o parecer do revisor em updates.");
   for (const e of edits) {
     if (!allowedFiles.includes(e?.path) || typeof e.content !== "string" || e.content.length > MAX_ARQUIVO) throw new Error("edição fora de allowedFiles ou grande demais.");
   }
