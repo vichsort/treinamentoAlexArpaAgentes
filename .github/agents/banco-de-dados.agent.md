@@ -1,6 +1,7 @@
 ---
 name: banco-de-dados
 description: Faz alterações no banco SQLite do Fluxo (tabelas, colunas, índices e dados iniciais) por meio de migrações. O coordenador deve chamá-lo sempre que um pedido exigir mudar o banco.
+target: github-copilot
 tools: ["read", "edit", "search", "execute"]
 ---
 
