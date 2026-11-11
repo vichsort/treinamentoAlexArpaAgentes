@@ -1,5 +1,5 @@
 // Tickets de atendimento: cada ticket é uma conversa (mensagens com role user | agent).
-// Agentes autônomos responderão pela mesma API, gravando mensagens com role "agent" (ainda não implementado).
+// Mensagens com role "agent" só entram pelo estado publicado pelo workflow (importarEstado): o app nunca simula resposta.
 import { randomUUID } from "node:crypto";
 import { invalido, naoEncontrado, texto } from "./http.js";
 import { transacao } from "./db.js";
@@ -94,11 +94,8 @@ export function rotasDeTickets(app, db) {
       db.prepare("INSERT INTO ticket (id, title, status, criado_em, atualizado_em, dono_id, request_id, fase) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
         .run(ticket.id, ticket.title, ticket.status, ticket.criado_em, ticket.atualizado_em, ticket.dono_id, nativo ? requestIdDe(id) : null, nativo ? "recebido" : null);
       const doUsuario = inserirMensagem(ticket.id, "user", content, agora);
-      // N1: resposta curta do atendimento; o trabalho de verdade segue pela issue.
-      const n1 = nativo
-        ? inserirMensagem(ticket.id, "agent", "Recebemos o seu ticket e já o encaminhamos para a nossa equipe. A resposta aparece aqui.", new Date().toISOString())
-        : null;
-      return n1 ? [doUsuario, n1] : [doUsuario];
+      // Sem resposta pronta: a primeira mensagem do atendimento só entra quando o agente N1 analisa o pedido (pela issue).
+      return [doUsuario];
     });
     if (nativo) await encaminhar(ticket, content, gh);
     return { ticket: saidaTicket(ticket), messages: mensagens.map(saidaMensagem) };
