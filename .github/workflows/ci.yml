@@ -1,0 +1,26 @@
+name: ci
+
+# Verificação mínima da aula: instala com o lockfile, compila e roda os testes existentes.
+# Roda em pull_request (sem segredos) e na main; não precisa de permissão além de leitura.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run build
+      - run: npm test

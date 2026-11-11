@@ -114,3 +114,18 @@ if (fase === "abrir-pr") {
   await gravarEstado(atual, { ...atual.estado, fase: "concluido", pr: pr.number });
   console.log(`PR #${pr.number} aberto.`);
 }
+
+if (fase === "build") {
+  // Aceita o PR de código só se: veio do bot na branch do requestId (mesmo repositório), o build é do commit atual
+  // e passou. O candidato nunca roda aqui: o build acontece no job "construir", sem segredos.
+  const { estado } = await estadoAtual();
+  if (!estado?.pr) { console.log("Estado sem PR: nada a registrar."); process.exit(0); }
+  const pr = await gh("GET", `/pulls/${estado.pr}`);
+  const origemOk = pr.user?.login === "github-actions[bot]" && pr.head.ref === `ai/${estado.requestId}` && pr.head.repo?.full_name === repo;
+  const atual = origemOk && pr.head.sha === env.SHA_BUILD;
+  const passou = env.RESULTADO_BUILD === "success";
+  const veredito = !origemOk ? "origem do PR não confere" : !atual ? "build é de um commit antigo" : passou ? "build passou" : "build falhou: devolver ao Desenvolvedor";
+  await gh("POST", `/issues/${estado.pr}/comments`, { body: `Conferência automática (${estado.requestId}): ${veredito}. Commit \`${String(env.SHA_BUILD).slice(0, 7)}\`. Sem merge automático.` });
+  if (origemOk && atual && !passou) await gravarEstado({ comentarioId: (await estadoAtual()).comentarioId }, { ...estado, fase: "build-falhou" });
+  console.log(veredito);
+}
