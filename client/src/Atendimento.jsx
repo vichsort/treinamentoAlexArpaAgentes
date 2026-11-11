@@ -183,7 +183,7 @@ export function Atendimento() {
   return (
     <section className="atendimento" aria-label="Atendimento">
       <aside className="chat-historico" aria-label="Seus tickets">
-        <Botao className="chat-novo" icone="mais" onClick={() => setNovoAberto(true)}>Novo ticket</Botao>
+        <Botao className="chat-novo" icone="mais" onClick={() => setNovoAberto(true)}>Novo Ticket</Botao>
         <h2 className="chat-historico-titulo">Seus tickets</h2>
         {tickets === null ? (
           <p className="lateral-vazio">Carregando tickets…</p>
@@ -255,7 +255,7 @@ export function Atendimento() {
         ) : null}
       </div>
 
-      <Dialogo aberto={novoAberto} titulo="Novo ticket" descricao="Dê um título ao assunto e descreva o que você precisa." aoFechar={() => setNovoAberto(false)}>
+      <Dialogo aberto={novoAberto} titulo="Novo Ticket" descricao="Dê um título ao assunto e descreva o que você precisa." aoFechar={() => setNovoAberto(false)}>
         {novoAberto ? (
           <form
             className="formulario"
