@@ -6,6 +6,7 @@ import { Campo } from "./componentes/Campo.jsx";
 import { Confirmar } from "./componentes/Confirmar.jsx";
 import { Dialogo } from "./componentes/Dialogo.jsx";
 import { Icone } from "./componentes/Icone.jsx";
+import { diasAtras, noPeriodo, PERIODOS } from "./periodos.js";
 
 // Com a tela aberta, busca a conversa de tempos em tempos; o backend por sua vez consulta a issue no GitHub.
 const ATUALIZAR_A_CADA_MS = 4000;
@@ -20,11 +21,9 @@ const hora = (iso) => new Date(iso).toLocaleString("pt-BR", { day: "2-digit", mo
 
 /** Agrupa o histórico como o ChatGPT: Hoje, Ontem, Últimos 7 dias, Mais antigos. */
 function agruparPorData(tickets) {
-  const inicioDoDia = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-  const hoje = inicioDoDia(new Date());
   const grupos = [["Hoje", []], ["Ontem", []], ["Últimos 7 dias", []], ["Mais antigos", []]];
   for (const t of tickets) {
-    const dias = Math.round((hoje - inicioDoDia(new Date(t.updatedAt))) / 86_400_000);
+    const dias = diasAtras(t.updatedAt);
     grupos[dias <= 0 ? 0 : dias === 1 ? 1 : dias <= 7 ? 2 : 3][1].push(t);
   }
   return grupos.filter(([, lista]) => lista.length);
@@ -100,6 +99,7 @@ export function Atendimento() {
   const [enviando, setEnviando] = useState(false);
   const [excluir, setExcluir] = useState(null);
   const [novoAberto, setNovoAberto] = useState(false);
+  const [periodo, setPeriodo] = useState("todos");
   const [slot, setSlot] = useState(null);
   const [sincronizando, setSincronizando] = useState(false);
   const fim = useRef(null);
@@ -214,6 +214,7 @@ export function Atendimento() {
       await carregarLista();
     });
 
+  const visiveis = (tickets ?? []).filter((t) => noPeriodo(t.updatedAt, periodo));
   const ticket = conversa?.ticket;
   const mensagens = conversa?.messages ?? [];
   const aguardando = ticket?.status === "open" && mensagens.length > 0 && mensagens[mensagens.length - 1].role === "user";
@@ -227,10 +228,15 @@ export function Atendimento() {
             <Icone nome="mais" tamanho={18} />
             Novo Ticket
           </button>
+          <div className="chat-filtro" role="group" aria-label="Filtrar tickets por período">
+            {PERIODOS.map((p) => (
+              <button key={p.id} type="button" className="chat-filtro-opcao" aria-pressed={periodo === p.id} onClick={() => setPeriodo(p.id)}>{p.rotulo}</button>
+            ))}
+          </div>
           {tickets === null ? (
             <p className="lateral-vazio">Carregando tickets…</p>
-          ) : tickets.length ? (
-            agruparPorData(tickets).map(([rotulo, lista]) => (
+          ) : visiveis.length ? (
+            agruparPorData(visiveis).map(([rotulo, lista]) => (
               <div key={rotulo} className="chat-grupo">
                 <h2 className="chat-historico-titulo">{rotulo}</h2>
                 <ul className="chat-historico-lista">
@@ -249,7 +255,7 @@ export function Atendimento() {
               </div>
             ))
           ) : (
-            <p className="lateral-vazio">Nenhum ticket ainda.</p>
+            <p className="lateral-vazio">{tickets.length ? "Nenhum ticket neste período." : "Nenhum ticket ainda."}</p>
           )}
         </nav>,
         slot,

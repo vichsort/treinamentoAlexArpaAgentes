@@ -535,3 +535,9 @@ textarea.campo-entrada { min-height: 96px; resize: vertical; }
 
 /* cabeçalho global: fica no topo de qualquer tela e hospeda o seletor de tema */
 .cabecalho-global { display: flex; align-items: center; justify-content: flex-end; gap: var(--e2); min-height: 48px; padding: var(--e1) var(--e4); border-bottom: 1px solid var(--borda); background: var(--superficie); }
+
+/* filtro de período do histórico de tickets */
+.chat-filtro { display: flex; flex-wrap: wrap; gap: var(--e1); padding: 0 var(--e1); }
+.chat-filtro-opcao { min-height: 28px; padding: 0 var(--e3); border-radius: var(--r-cheio); border: 1px solid var(--chat-borda); background: none; color: var(--chat-suave); font: inherit; font-size: 12px; cursor: pointer; transition: background-color 160ms ease-out, color 160ms ease-out; }
+.chat-filtro-opcao:hover { background: var(--chat-cinza-hover); color: var(--chat-texto); }
+.chat-filtro-opcao[aria-pressed="true"] { background: var(--chat-texto); border-color: var(--chat-texto); color: var(--chat-botao-texto); }
