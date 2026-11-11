@@ -128,13 +128,38 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
+    outputs:
+      sha: ${{ steps.commit.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.abrir-pr.outputs.ramo }}
           persist-credentials: false
+      - id: commit
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm ci
       - run: npm run build
+
+  # Registra o resultado do build no PR, com o GITHUB_TOKEN e a main confiável. Não executa código do PR.
+  registrar-build:
+    needs: [abrir-pr, construir]
+    if: always() && needs.abrir-pr.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - run: node automacao/controlador.mjs build
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RESULTADO_BUILD: ${{ needs.construir.result }}
+          SHA_BUILD: ${{ needs.construir.outputs.sha }}

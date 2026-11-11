@@ -16,3 +16,12 @@
 
 - **GitHub Copilot cloud agent:** não confirmado; o token do `gh` não tem escopo para ler o plano da conta, então falta verificar em github.com/settings/copilot se há plano pago.
 - **Secret `COPILOT_AGENT_TOKEN`:** ainda não criado. Deve ficar nas Actions, separado de qualquer credencial local do backend. Nenhum valor foi registrado aqui.
+
+## Etapa 04: validar código e regressão
+
+- **CI mínimo:** `.github/workflows/ci.yml` roda em PR e na `main`: `npm ci` (lockfile), `npm run build` e `npm test`, só com permissão de leitura e sem segredos. Antes não havia CI.
+- **Build do código gerado:** no `ai-agents.yml`, o job `construir` compila o commit do PR sem segredos. O novo job `registrar-build` (main confiável, `GITHUB_TOKEN`) confere a origem do PR (bot, branch `ai/<requestId>`, mesmo repositório), que o build é do commit atual e comenta o resultado no PR. Não executa o candidato.
+- **Critério:** `{id, description}`; sem teste novo nem prova independente.
+- **Agentes:** Desenvolvedor confere o comportamento uma vez no app (e avisa se não conseguiu abrir); Revisor registra em uma frase se o diff atende.
+- **Executado localmente:** `npm ci`, `npm run build` e `npm test` (22 testes) com sucesso.
+- **Conferência no app:** esta etapa não muda a interface, então não há conferência visual.
