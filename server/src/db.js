@@ -83,6 +83,9 @@ const MIGRACOES = [
    ALTER TABLE ticket ADD COLUMN issue_number INTEGER;
    ALTER TABLE ticket ADD COLUMN pr_number INTEGER;
    ALTER TABLE ticket ADD COLUMN fase TEXT`,
+  // Estado vindo do workflow: ids das mensagens públicas já importadas e a execução que as gerou.
+  `ALTER TABLE ticket ADD COLUMN msgs_ids TEXT;
+   ALTER TABLE ticket ADD COLUMN run_id TEXT`,
 ];
 
 /** `caminho` = arquivo do banco; `:memory:` nos testes. */

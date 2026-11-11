@@ -1,0 +1,138 @@
+name: ai-agents
+
+# Atendimento por Actions com a minha própria chave de IA. Sempre da main confiável.
+# O backend dispara este workflow de forma explícita (workflow_dispatch) depois de criar a issue;
+# o evento da issue é só um segundo caminho, e o estado de controle impede o trabalho em dobro.
+on:
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: Número da issue origin:app
+        required: true
+      retomar:
+        description: Retomar uma execução que ficou incerta
+        type: boolean
+        default: false
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+
+# Uma execução por issue; as seguintes esperam e releem o estado.
+concurrency:
+  group: ai-agents-${{ inputs.issue || github.event.issue.number }}
+  cancel-in-progress: false
+
+env:
+  ISSUE: ${{ inputs.issue || github.event.issue.number }}
+  RETOMAR: ${{ inputs.retomar || 'false' }}
+  AGENT_RUNTIME: ${{ vars.AGENT_RUNTIME }}
+  AGENT_DRY_RUN: ${{ vars.AGENT_DRY_RUN || 'true' }}
+
+jobs:
+  coordenar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    outputs:
+      skip: ${{ steps.preparar.outputs.skip }}
+      outcome: ${{ steps.publicar.outputs.outcome }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+
+      - id: preparar
+        run: node automacao/controlador.mjs preparar
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          AGENT_LINK_SECRET: ${{ secrets.AGENT_LINK_SECRET }}
+
+      # Único passo com AI_API_KEY. Não recebe GITHUB_TOKEN. Uma chamada, com timeout.
+      - id: ia
+        if: steps.preparar.outputs.skip == 'false'
+        run: node automacao/chamar-ia.mjs
+        timeout-minutes: 3
+        env:
+          AI_PROVIDER: ${{ vars.AI_PROVIDER }}
+          AI_MODEL: ${{ vars.AI_MODEL }}
+          AI_BASE_URL: ${{ vars.AI_BASE_URL }}
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
+
+      - id: publicar
+        if: steps.preparar.outputs.skip == 'false'
+        run: node automacao/controlador.mjs publicar
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - if: failure() && steps.preparar.outputs.skip == 'false'
+        run: node automacao/controlador.mjs falha
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - if: steps.publicar.outputs.outcome == 'code'
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultado
+          path: ${{ runner.temp }}/resultado-validado.json
+
+  # Só código aprovado pela validação, sem chave de IA. Escreve apenas os arquivos de allowedFiles.
+  abrir-pr:
+    needs: coordenar
+    if: needs.coordenar.outputs.outcome == 'code' && vars.AGENT_DRY_RUN == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    outputs:
+      ramo: ${{ steps.aplicar.outputs.ramo }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/download-artifact@v4
+        with:
+          name: resultado
+          path: ${{ runner.temp }}/resultado
+      - id: aplicar
+        run: node automacao/controlador.mjs aplicar
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RESULTADO: ${{ runner.temp }}/resultado/resultado-validado.json
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$RAMO"
+          git add -A
+          git commit -m "Atendimento automático: $RAMO"
+          git push origin "$RAMO"
+        env:
+          RAMO: ${{ steps.aplicar.outputs.ramo }}
+      - run: node automacao/controlador.mjs abrir-pr
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RAMO: ${{ steps.aplicar.outputs.ramo }}
+
+  # Roda o código proposto sem segredos e só com leitura. Falhar aqui não muda nada na main.
+  construir:
+    needs: abrir-pr
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.abrir-pr.outputs.ramo }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run build
