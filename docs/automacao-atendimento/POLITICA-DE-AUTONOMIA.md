@@ -5,6 +5,7 @@
 - **Responder dúvidas de uso** com base em `PRODUTO.md`.
 - **Pedir esclarecimento** com uma pergunta curta quando faltar informação.
 - **Fazer pequenas mudanças no quadro de tarefas**, só no que o pedido descreve.
+- **Mudar o banco**, somente o agente `banco-de-dados` (`.github/agents/banco-de-dados.agent.md`), por migração nova e a pedido do coordenador.
 
 ## Caminhos de produto que podem mudar
 
@@ -17,7 +18,7 @@
 ## Não pode mudar
 
 - Login e credenciais: `server/src/auth.js`, `.env`, secrets
-- Banco: `server/src/db.js` (migrações), `server/dados/`
+- Banco: `server/dados/` nunca. `server/src/db.js` (migrações) só pelo agente `banco-de-dados`, chamado pelo coordenador
 - Atendimento: `server/src/tickets.js`, `client/src/Atendimento.jsx`
 - Infraestrutura: `.github/`, `scripts/`, `package.json`, `vite.config.js`
 

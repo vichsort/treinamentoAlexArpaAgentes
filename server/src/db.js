@@ -77,6 +77,12 @@ const MIGRACOES = [
    INSERT INTO ticket_mensagem (id, ticket_id, role, content, criado_em) VALUES
      ('msg-exemplo-1', 'ticket-exemplo', 'user', 'Olá! Como compartilho um quadro com a equipe?', '2026-11-10T10:00:00.000Z'),
      ('msg-exemplo-2', 'ticket-exemplo', 'agent', 'Olá! Recebemos o seu pedido e um agente vai responder por aqui em breve.', '2026-11-10T10:01:00.000Z');`,
+  // Atendimento via GitHub: dono do ticket e a relação com a issue (a MESMA issue serve ao Copilot).
+  `ALTER TABLE ticket ADD COLUMN dono_id TEXT REFERENCES usuario(id) ON DELETE SET NULL;
+   ALTER TABLE ticket ADD COLUMN request_id TEXT;
+   ALTER TABLE ticket ADD COLUMN issue_number INTEGER;
+   ALTER TABLE ticket ADD COLUMN pr_number INTEGER;
+   ALTER TABLE ticket ADD COLUMN fase TEXT`,
 ];
 
 /** `caminho` = arquivo do banco; `:memory:` nos testes. */

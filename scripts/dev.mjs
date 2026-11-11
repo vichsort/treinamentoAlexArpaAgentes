@@ -16,7 +16,7 @@ const webPorta = await acharPorta(Number(process.env.WEB_PORT ?? 5173), [apiPort
 const env = { ...process.env, API_PORT: String(apiPorta), WEB_PORT: String(webPorta) };
 
 const filhos = [
-  { nome: "API", processo: spawn(process.execPath, ["--watch", "server/src/index.js"], { cwd: raiz, env, stdio: "inherit" }) },
+  { nome: "API", processo: spawn(process.execPath, ["--watch", "--env-file-if-exists=.env", "server/src/index.js"], { cwd: raiz, env, stdio: "inherit" }) },
   { nome: "Interface", processo: spawn(process.execPath, [join(raiz, "node_modules", "vite", "bin", "vite.js")], { cwd: raiz, env, stdio: "inherit" }) },
 ];
 
